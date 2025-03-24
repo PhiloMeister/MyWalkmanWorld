@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walkman Collection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Sony Walkman Enthusiast Site</h1>
+
+        <form method="GET">
+            <input type="text" name="search" placeholder="Search Walkman by model..." value="{{ search_query }}">
+            <button type="submit">Search</button>
+        </form>
+
+        <ul class="walkman-list">
+            {% for walkman in walkmans %}
+                <li>
+                    <strong>{{ walkman[1] }}</strong> ({{ walkman[2] }})<br>
+                    <span class="description">{{ walkman[3] }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

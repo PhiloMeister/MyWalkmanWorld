@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  flask-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flask-app
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app  # Mount local files into container to enable auto-reload
+    environment:
+      FLASK_ENV: development  # Enables auto-reloading
+      FLASK_DEBUG: "1"
+    networks:
+      - app-network
+
+  zap-server:
+    build:
+      context: .
+      dockerfile: Dockerfile-zap
+    container_name: zap-server
+    restart: always
+    ports:
+      - "8090:8090"
+    networks:
+      - app-network
+
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: sonarqube
+    depends_on:
+      - db-sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://db-sonarqube:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonarqube
+      SONAR_JDBC_PASSWORD: ainsurev
+      JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
+      ES_JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
+      SONAR_WEB_CONTEXT: /sonar
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    networks:
+      - app-network
+
+  db-sonarqube:
+    image: postgres:12
+    container_name: db-sonarqube
+    environment:
+      POSTGRES_USER: sonarqube
+      POSTGRES_PASSWORD: ainsurev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgresql:/var/lib/postgresql
+      - postgresql_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  postgresql:
+  postgresql_data:
