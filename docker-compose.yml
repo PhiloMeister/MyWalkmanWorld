@@ -23,6 +23,8 @@ services:
       - "8090:8090"
     networks:
       - app-network
+    volumes:
+      - zap_reports:/zap/wrk
 
   sonarqube:
     image: sonarqube:lts-community
@@ -71,6 +73,7 @@ services:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
       - jenkins_dependency_check:/srv/dependency-check
+      - zap_reports:/zap/wrk
     environment:
       JAVA_OPTS: >
         -Djenkins.install.runSetupWizard=false
@@ -80,11 +83,13 @@ services:
     networks:
       - app-network
 
+
 networks:
   app-network:
     driver: bridge
 
 volumes:
+  zap_reports:
   sonarqube_data:
   sonarqube_extensions:
   sonarqube_logs:
