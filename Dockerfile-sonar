@@ -1,0 +1,14 @@
+# Use the official SonarQube image as base
+FROM sonarqube:lts-community
+
+
+
+# Set the directory where plugins are stored
+ENV SONARQUBE_HOME /opt/sonarqube
+
+# Install plugins for various languages and tools
+RUN curl -L https://binaries.sonarsource.com/Distribution/sonar-python/sonar-python-plugin-3.24.1.11916.jar -o $SONARQUBE_HOME/extensions/plugins/sonar-python-plugin-3.24.1.11916.jar && \
+
+
+# Expose the necessary ports
+EXPOSE 9000

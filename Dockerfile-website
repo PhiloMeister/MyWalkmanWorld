@@ -12,7 +12,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the app files (but we will override them with volume mounting)
-COPY . .
+COPY .. .
 
 # Expose Flask's default port
 EXPOSE 5000

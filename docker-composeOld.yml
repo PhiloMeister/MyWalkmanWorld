@@ -7,8 +7,10 @@ services:
     restart: always
     ports:
       - "5000:5000"
+    volumes:
+      - .:/app  # Mount local files into container to enable auto-reload
     environment:
-      FLASK_ENV: development
+      FLASK_ENV: development  # Enables auto-reloading
       FLASK_DEBUG: "1"
     networks:
       - app-network
@@ -71,6 +73,8 @@ services:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
       - jenkins_dependency_check:/srv/dependency-check
+      - .:/var/jenkins_home/workspace/SAST
+      - .:/app
     environment:
       JAVA_OPTS: >
         -Djenkins.install.runSetupWizard=false
