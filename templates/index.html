@@ -2,27 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Walkman Collection</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Walkman World</title>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome to Sony Walkman Enthusiast Site</h1>
+    <h1>Walkman World</h1>
 
-        <form method="GET">
-            <input type="text" name="search" placeholder="Search Walkman by model..." value="{{ search_query }}">
-            <button type="submit">Search</button>
-        </form>
+    {% if message %}
+        <p class="msg">{{ message }}</p>
+    {% endif %}
 
-        <ul class="walkman-list">
-            {% for walkman in walkmans %}
-                <li>
-                    <strong>{{ walkman[1] }}</strong> ({{ walkman[2] }})<br>
-                    <span class="description">{{ walkman[3] }}</span>
-                </li>
-            {% endfor %}
-        </ul>
-    </div>
+    <form method="POST">
+    <input type="text" name="model" placeholder="Model (e.g. WM-EX631)" required>
+    <input type="number" name="year" placeholder="Year (e.g. 1999)" required>
+    <input type="text" name="description" placeholder="Description" required>
+    <button type="submit">Add Walkman</button>
+</form>
+
+    <form method="GET">
+        <input type="text" name="search" value="{{ search_query }}" placeholder="Search model...">
+        <button type="submit">Search</button>
+    </form>
+
+    <ul>
+        {% for walkman in walkmans %}
+            <li>{{ walkman[1] }} -
+                <a href="/rate?model={{ walkman[1] }}">Look my rate</a>
+            </li>
+        {% endfor %}
+    </ul>
 </body>
 </html>

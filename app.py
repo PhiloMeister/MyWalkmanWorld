@@ -1,63 +1,101 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, redirect, jsonify
 import sqlite3
-import os
 import subprocess
+import os
+import random
 
 app = Flask(__name__)
 
-# 🚨 Hardcoded Secret Key (SAST Issue)
-SECRET_KEY = "supersecretkey123"
+# 🚨 Hardcoded values
+SECRET_KEY = "please_dont_hack_me"
+DATABASE_PATH = "walkman.sqlite"
 
-# 🚨 Hardcoded Database Path (SAST Issue)
-DATABASE_URL = "walkman.sqlite"
+def init_db():
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS walkmans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            model TEXT NOT NULL UNIQUE,
+            year INTEGER NOT NULL,
+            description TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-# 🚨 Hardcoded Admin Credentials (SAST Issue)
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "password123"
 
-# 🚨 Dangerous Database Query with SQL Injection (SAST & DAST Issue)
+# 🚨 Vulnerable to SQL Injection
 def get_walkmans(search_query=None):
-    conn = sqlite3.connect(DATABASE_URL)
+    conn = sqlite3.connect(DATABASE_PATH)
     cursor = conn.cursor()
     if search_query:
-        # 🚨 SQL Injection vulnerability (f-string query)
         query = f"SELECT * FROM walkmans WHERE model LIKE '%{search_query}%'"
-        cursor.execute(query)  # No input sanitization!
+        cursor.execute(query)  # 🚨 Injection risk
     else:
         cursor.execute("SELECT * FROM walkmans")
-    walkmans = cursor.fetchall()
+    results = cursor.fetchall()
     conn.close()
-    return walkmans
+    return results
 
-# 🚨 Unauthenticated Admin Panel (DAST Issue)
-@app.route("/admin")
-def admin_panel():
-    return "<h1>Admin Panel - No Authentication Required</h1><p>Anyone can access this!</p>"
+# 🚨 Adds a walkman to the DB (no sanitization)
+def add_walkman(model, year, description):
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    # 🚨 SQL Injection vulnerability (intentionally insecure)
+    query = f"INSERT INTO walkmans (model, year, description) VALUES ('{model}', {year}, '{description}')"
+    cursor.execute(query)
+    conn.commit()
+    conn.close()
 
-# 🚨 Open Redirect Vulnerability (DAST Issue)
-@app.route("/redirect")
-def unsafe_redirect():
-    url = request.args.get("url")
-    return f'<meta http-equiv="refresh" content="0; URL={url}">', 302
-
-# 🚨 Remote Code Execution (SAST & DAST Issue)
-@app.route("/execute", methods=["POST"])
-def execute_command():
-    command = request.form.get("command")
-    result = subprocess.check_output(command, shell=True)  # 🚨 Dangerous!
-    return jsonify({"result": result.decode()})
-
-# 🚨 Debug Route Exposing Sensitive Environment Variables (SAST Issue)
-@app.route("/debug")
-def debug():
-    return jsonify(dict(os.environ))  # Exposes all environment variables!
-
-# 🚨 Home Page with Vulnerable Search Field
-@app.route("/", methods=["GET"])
-def home():
+@app.route("/", methods=["GET", "POST"])
+def index():
+    message = None
+    if request.method == "POST":
+        model = request.form.get("model", "")
+        year = request.form.get("year", "")
+        description = request.form.get("description", "")
+        if model and year and description:
+            try:
+                add_walkman(model, year, description)
+                message = f"✅ Added: {model}"
+            except Exception as e:
+                message = f"❌ Error adding: {e}"
+        else:
+            message = "❌ All fields are required."
     search_query = request.args.get("search", "")
     walkmans = get_walkmans(search_query)
-    return render_template("index.html", walkmans=walkmans, search_query=search_query)
+    return render_template("index.html", walkmans=walkmans, search_query=search_query, message=message)
+
+@app.route("/rate", methods=["GET"])
+def rate():
+    model = request.args.get("model", "")
+    verdicts = [
+        "This one is good.",
+        "This one is not good.",
+        "This one is shit 100%."
+    ]
+    result = random.choice(verdicts)
+    return f"<h1>{model}</h1><p>{result}</p>"
+
+# 🚨 RCE
+@app.route("/run", methods=["POST"])
+def run():
+    cmd = request.form.get("cmd")
+    output = subprocess.check_output(cmd, shell=True)  # 🚨 Remote Code Execution
+    return f"<pre>{output.decode()}</pre>"
+
+# 🚨 Open redirect
+@app.route("/goto")
+def goto():
+    target = request.args.get("url", "/")
+    return redirect(target)
+
+# 🚨 Expose environment variables
+@app.route("/env")
+def env():
+    return jsonify(dict(os.environ))
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)  # 🚨 Debug Mode Enabled (Security Risk)
+    init_db()
+    app.run(debug=True, host="0.0.0.0", port=5000)  # 🚨 Debug mode ON
